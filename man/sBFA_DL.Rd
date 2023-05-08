@@ -6,7 +6,7 @@
 \usage{
 sBFA_DL(
   x,
-  k,
+  q,
   starting,
   priors,
   nmcmc = 10000,
@@ -18,7 +18,7 @@ sBFA_DL(
 \arguments{
 \item{x}{a matrix containing data}
 
-\item{k}{the number of factors to be fitted.}
+\item{q}{the number of factors to be fitted.}
 
 \item{starting}{a list with each tag corresponding to a parameter name.
 Valid tags are 'Lambda', 'U', 'Sigma', 'Phi', 'tau', 'Psi'.

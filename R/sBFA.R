@@ -25,6 +25,12 @@ sBFA_DL = function(x, q, starting, priors, nmcmc = 10000, nburnin = 5000, verbos
    p = ncol(x)
 
    # initialize parameters with provided starting values
+   Lambda = starting$Lambda
+   U      = starting$U
+   Sigma  = starting$Sigma
+   Phi    = starting$Phi
+   tau    = starting$tau
+   Psi    = starting$Psi
 
    # initialize MCMC samples
    Lambda_mcmc = array(NA, dim = c(p, q, nmcmc))

@@ -17,7 +17,7 @@ To install the latest version from Github, use
 
 ``` r
 library(devtools)
-devtools::install_github("junsoukchoi/sBFA", build_vignettes = TRUE)
+devtools::install_github("junsoukchoi/sBFA")
 ```
 
 ## Usage
@@ -31,92 +31,65 @@ from the posterior distributions of the sparse Bayesian factor models
 with the Dirichlet-Laplace priors.
 
 ``` r
-library(ZIPBN)
+# set the sample size n, dimension p, and the number of factors q
+n = 100
+p = 400
+q = floor(log(p))
 
-
-## Example data
-set.seed(7)
-
-# generate a simple graph: X1 -> X2 -> X3
-p = 3
-A = matrix(0, p, p)
-A[3, 2] = A[2, 1] = 1
-
-# parameters of the ZIPBN model, given graph A
-alpha = matrix(0, p, p)
-alpha[A == 1] = 0.3
-beta  = matrix(0, p, p)
-beta[A == 1] = 0.2
-delta = rep(1, p)
-gamma = rep(1.5, p)
-
-# generate data from the ZIPBN model
-n = 200
-x = matrix(0, n, p)
-for (j in 1 : p)
+# generate true Lambda
+# s = log(p) nonzero elements are drawn uniformly between 1 and 2 per columns
+Lambda = matrix(0, p, q)
+for (k in 1 : q)
 {
-   # calculate pi_j
-   pi = exp(x %*% alpha[j, ] + delta[j])
-   pi = pi / (1 + pi)
-   # calculate mu_j
-   mu = exp(x %*% beta[j, ] + gamma[j])
-   # generate data for X_j
-   x[ , j] = rpois(n, mu) * (1 - rbinom(n, 1, pi))
+   id_nonzero = sample(1 : p, floor(log(p)))
+   Lambda[id_nonzero, k] = runif(floor(log(p)), 1, 2)
 }
 
+# set true Sigma to be identity
+Sigma = diag(1, p)
 
-## fit ZIPBN models
-# create starting value list
-m = colMeans(x)
-v = apply(x, 2, var)
-starting = list(alpha = matrix(0, p, p),
-                beta  = matrix(0, p, p),
-                delta = log((v - m) / (m * m)),
-                gamma = log((v - m + m * m) / m),
-                A     = matrix(0, p, p),
-                tau   = c(10, 10, 1, 1),
-                rho   = 0.1)
+# generate data from a sparse factor model with the given Lambda and Sigma
+Y = matrix(NA, n, p)
+U = matrix(NA, n, q)
+for (i in 1 : n)
+{
+   U[i, ] = rnorm(q)
+   Y[i, ] = Lambda %*% U[i, ] + sqrt(Sigma) %*% rnorm(p)
+}
 
-# create tuning value list
-tuning = list(phi_alpha = c(1e+8, 20),
-              phi_beta  = c(1e+8, 100),
-              phi_delta = 5,
-              phi_gamma = 50,
-              phi_A     = c(1e+10, 10, 10, 1, 10))
+# choose the values of hyperparameters 
+priors = list()
+priors$Sigma = c(0.1, 0.1)
+priors$Phi   = 0.5
 
-# create priors list
-priors = list(nu        = 10000^2,
-              tau_alpha = c(0.01, 0.01),
-              tau_beta  = c(0.01, 0.01),
-              tau_delta = c(0.01, 0.01),
-              tau_gamma = c(0.01, 0.01),
-              rho       = c(0.5, 0.5))
+# obtain starting values for MCMC from the prior distribution
+starting = list()
+starting$Phi    = matrix(1, p, q)
+starting$Phi    = Phi / sum(Phi)
+starting$tau    = rgamma(1, shape = p * q * priors$Phi, rate = 0.5)
+starting$Psi    = matrix(rexp(p * q, rate = 0.5), p, q)
+starting$Lambda = matrix(rnorm(p * q, sd = c(sqrt(Psi * tau^2 * Phi^2))), p, q)
+starting$U      = matrix(rnorm(n * q), n, q)
+starting$Sigma  = diag(1, p)
 
-# run mcmc_ZIPBN function
-n_sample = 2000
-n_burnin = 1000
-out = mcmc_ZIPBN(x, starting, tuning, priors, n_sample, n_burnin)
+# run MCMC for the sparse Bayesian factor models with the Dirichlet-Laplace priors
+out = sBFA_DL(Y, q, starting, priors)
 
+# calculate the posterior mean of the loading matrix
+Lambda_est = apply(out$Lambda, c(1, 2), mean)
 
-## posterior inference via ZIPBN models
-# report Metropolis sampling acceptance percents
-out$acceptance
-
-# recover garph structure
-cutoff = 0.5
-A_est  = 1 * (apply(out$samples$A, c(1, 2), mean) > cutoff)
-
-# calculate the posterior mean of each parameter, given the recovered graph 
-subset = apply(out$samples$A == array(A_est, dim = c(p, p, n_sample - n_burnin)), 3, all)
-alpha_est = apply(out$samples$alpha[ , , subset], c(1, 2), mean)
-beta_est  = apply(out$samples$beta[ , , subset], c(1, 2), mean)
-delta_est = rowMeans(out$samples$delta[ , subset])
-gamma_est = rowMeans(out$samples$gamma[ , subset])
-
-# report the posterior mean of each parameter with the recoverd graph
-A_est
-round(alpha_est, digits = 2)
-round(beta_est, digits = 2)
-round(delta_est, digits = 2)
-round(gamma_est, digits = 2)
+# visualize the true loading matrix and the posterior mean of the loading matrix
+library(gplots)
+library(RColorBrewer)
+Colors=rev(brewer.pal(7, "RdBu"))
+Colors=colorRampPalette(Colors)(100)
+breaks = seq(-5, 5, length.out = 101)
+pdf(file = "Lambda_true.pdf", width = 10, height = 8)
+heatmap.2(Lambda, col = Colors, density.info = "none", dendrogram = 'none', Colv = FALSE, Rowv =FALSE, trace = "none", breaks = breaks, 
+          keysize = 1, key.par = list(mar=c(3.5,0,3,4)), lmat=rbind(c(5,4,2),c(6,1,3)), lhei=c(1,5), lwid=c(1,10,1))
+dev.off()
+pdf(file = "Lambda_est.pdf", width = 10, height = 8)
+heatmap.2(Lambda_est, col = Colors, density.info = "none", dendrogram = 'none', Colv = FALSE, Rowv =FALSE, trace = "none", breaks = breaks, 
+          keysize = 1, key.par = list(mar=c(3.5,0,3,4)), lmat=rbind(c(5,4,2),c(6,1,3)), lhei=c(1,5), lwid=c(1,10,1))
+dev.off()
 ```

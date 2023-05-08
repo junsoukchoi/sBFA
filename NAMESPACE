@@ -1,1 +1,5 @@
 exportPattern("^[[:alpha:]]+")
+import(MCMCpack)
+import(GIGrvg)
+import(actuar)
+import(Matrix)

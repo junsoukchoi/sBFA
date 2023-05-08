@@ -8,5 +8,5 @@ Description: Implementation of the data-augmented Gibbs sampler for the sparse B
 License: GPL (>=2)
 Encoding: UTF-8
 LazyData: true
-Imports: MCMCpack, GIGrvg, actuar
+Imports: MCMCpack, GIGrvg, actuar, Matrix
 RoxygenNote: 7.2.3

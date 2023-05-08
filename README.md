@@ -65,10 +65,10 @@ priors$Phi   = 0.5
 # obtain starting values for MCMC from the prior distribution
 starting = list()
 starting$Phi    = matrix(1, p, q)
-starting$Phi    = Phi / sum(Phi)
+starting$Phi    = starting$Phi / sum(starting$Phi)
 starting$tau    = rgamma(1, shape = p * q * priors$Phi, rate = 0.5)
 starting$Psi    = matrix(rexp(p * q, rate = 0.5), p, q)
-starting$Lambda = matrix(rnorm(p * q, sd = c(sqrt(Psi * tau^2 * Phi^2))), p, q)
+starting$Lambda = matrix(rnorm(p * q, sd = c(sqrt(starting$Psi * starting$tau^2 * starting$Phi^2))), p, q)
 starting$U      = matrix(rnorm(n * q), n, q)
 starting$Sigma  = diag(1, p)
 

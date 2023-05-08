@@ -32,6 +32,9 @@ Function `sBFA` takes data with the number of factor to be fitted and some argum
 
 
 ```{r example, tidy='formatR', eval = FALSE, echo = TRUE}
+library(sBFA)
+set.seet(7)
+
 # set the sample size n, dimension p, and the number of factors q
 n = 100
 p = 400

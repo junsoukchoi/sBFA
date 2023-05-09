@@ -18,6 +18,54 @@
 #' @export
 #'
 #' @examples
+#' set.seed(7)
+#'
+#' # set the sample size n, dimension p, and the number of factors q
+#' n = 100
+#' p = 100
+#' q = floor(log(p))
+#'
+#' # generate true Lambda
+#' # s = log(p) nonzero elements are drawn uniformly between 1 and 2 per columns
+#' Lambda = matrix(0, p, q)
+#' for (k in 1 : q)
+#' {
+#'    id_nonzero = sample(1 : p, floor(log(p)))
+#'    Lambda[id_nonzero, k] = runif(floor(log(p)), 1, 2)
+#' }
+#'
+#' # set true Sigma to be identity
+#' Sigma = diag(1, p)
+#'
+#' # generate data from a sparse factor model with the given Lambda and Sigma
+#' Y = matrix(NA, n, p)
+#' U = matrix(NA, n, q)
+#' for (i in 1 : n)
+#' {
+#'    U[i, ] = rnorm(q)
+#'    Y[i, ] = Lambda %*% U[i, ] + sqrt(Sigma) %*% rnorm(p)
+#' }
+#'
+#' # choose the values of hyperparameters
+#' priors = list()
+#' priors$Sigma = c(0.1, 0.1)
+#' priors$Phi   = 0.5
+#'
+#' # obtain starting values for MCMC from the prior distribution
+#' starting = list()
+#' starting$Phi    = matrix(1, p, q)
+#' starting$Phi    = starting$Phi / sum(starting$Phi)
+#' starting$tau    = rgamma(1, shape = p * q * priors$Phi, rate = 0.5)
+#' starting$Psi    = matrix(rexp(p * q, rate = 0.5), p, q)
+#' starting$Lambda = matrix(rnorm(p * q, sd = c(sqrt(starting$Psi * starting$tau^2 * starting$Phi^2))), p, q)
+#' starting$U      = matrix(rnorm(n * q), n, q)
+#' starting$Sigma  = diag(1, p)
+#'
+# run MCMC for the sparse Bayesian factor models with the Dirichlet-Laplace priors
+#out = sBFA_DL(Y, q, starting, priors)
+#
+## calculate the posterior mean of the loading matrix
+#Lambda_est = apply(out$Lambda, c(1, 2), mean)
 sBFA_DL = function(x, q, starting, priors, nmcmc = 10000, nburnin = 5000, verbose = TRUE, nreport = 500)
 {
    # sample size and dimension
@@ -114,7 +162,7 @@ sBFA_DL = function(x, q, starting, priors, nmcmc = 10000, nburnin = 5000, verbos
       # print progress of our sampler
       if (verbose)
       {
-         if (iter %% 100 == 0) cat("iter =", iter, "\n")
+         if (iter %% nreport == 0) cat("iter =", iter, "\n")
       }
    }
 

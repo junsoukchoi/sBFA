@@ -22,18 +22,20 @@ devtools::install_github("junsoukchoi/sBFA")
 
 ## Usage
 
-The following example describes how to use package `sBFA` to conduct the
+The following example describes how to use the package `sBFA` to do the
 posterior inference for the sparse Bayesian factor models with the
-Dirichlet-Laplace priors. conduct analysis on zero-inflated cound data.
-Function `sBFA` takes data with the number of factor to be fitted and
-some arguments needed for the Gibbs sampler, and returns MCMC samples
-from the posterior distributions of the sparse Bayesian factor models
-with the Dirichlet-Laplace priors.
+Dirichlet-Laplace priors. The function `sBFA_DL` takes data with the
+number of factor to be fitted and some arguments needed for the Gibbs
+sampler, and returns MCMC samples from the posterior distribution of the
+sparse Bayesian factor models with the Dirichlet-Laplace priors.
 
 ``` r
+library(sBFA)
+set.seed(7)
+
 # set the sample size n, dimension p, and the number of factors q
 n = 100
-p = 400
+p = 100
 q = floor(log(p))
 
 # generate true Lambda
@@ -83,7 +85,7 @@ library(gplots)
 library(RColorBrewer)
 Colors=rev(brewer.pal(7, "RdBu"))
 Colors=colorRampPalette(Colors)(100)
-breaks = seq(-5, 5, length.out = 101)
+breaks = seq(-2.5, 2.5, length.out = 101)
 pdf(file = "Lambda_true.pdf", width = 10, height = 8)
 heatmap.2(Lambda, col = Colors, density.info = "none", dendrogram = 'none', Colv = FALSE, Rowv =FALSE, trace = "none", breaks = breaks, 
           keysize = 1, key.par = list(mar=c(3.5,0,3,4)), lmat=rbind(c(5,4,2),c(6,1,3)), lhei=c(1,5), lwid=c(1,10,1))

@@ -61,11 +61,11 @@
 #' starting$U      = matrix(rnorm(n * q), n, q)
 #' starting$Sigma  = diag(1, p)
 #'
-# run MCMC for the sparse Bayesian factor models with the Dirichlet-Laplace priors
-#out = sBFA_DL(Y, q, starting, priors)
-#
-## calculate the posterior mean of the loading matrix
-#Lambda_est = apply(out$Lambda, c(1, 2), mean)
+#' # run MCMC for the sparse Bayesian factor models with the Dirichlet-Laplace priors
+#' out = sBFA_DL(Y, q, starting, priors)
+#'
+#' # calculate the posterior mean of the loading matrix
+#' Lambda_est = apply(out$Lambda, c(1, 2), mean)
 sBFA_DL = function(x, q, starting, priors, nmcmc = 10000, nburnin = 5000, verbose = TRUE, nreport = 500)
 {
    # sample size and dimension
